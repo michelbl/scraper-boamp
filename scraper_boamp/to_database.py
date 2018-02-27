@@ -6,9 +6,8 @@ import shutil
 
 import requests
 from bs4 import BeautifulSoup
-import psycopg2
 
-from scraper_boamp.config import CONFIG_DATABASE, CONFIG_FILE_STORAGE
+from scraper_boamp.config import CONFIG_FILE_STORAGE
 
 
 DOC_TYPE_LIST = ['BOAMP-J-AO', 'BOAMP-J-IC-AA', 'BOAMP-N-AO', 'BOAMP-N-IC-AA', 'MAPA-AO', 'MAPA-IC-AA']
@@ -21,22 +20,6 @@ TMP_DIR = CONFIG_FILE_STORAGE['tmp_directory']
 
 STOCK_YEAR_LIST = [2015, 2016]
 STREAM_YEAR_LIST = [2017, 2018]
-
-
-def to_database():
-    # Open connection
-    connection = psycopg2.connect(
-        dbname=CONFIG_DATABASE['name'],
-        user=CONFIG_DATABASE['username'],
-        password=CONFIG_DATABASE['password'],
-    )
-    cursor = connection.cursor()
-
-    stock_to_database(connection, cursor)
-    stream_to_database(connection, cursor)
-
-    cursor.close()
-    connection.close()
 
 
 def stock_to_database(connection, cursor):

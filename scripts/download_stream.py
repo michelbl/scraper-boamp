@@ -1,7 +1,9 @@
 import psycopg2
 
 from scraper_boamp.config import CONFIG_DATABASE
-from scraper_boamp.to_database import stock_to_database, stream_to_database
+from scraper_boamp.to_database import stream_year_to_database
+
+CURRENT_YEAR = 2018
 
 
 # Open connection
@@ -12,8 +14,7 @@ connection = psycopg2.connect(
 )
 cursor = connection.cursor()
 
-stock_to_database(connection, cursor)
-stream_to_database(connection, cursor)
+stream_year_to_database(CURRENT_YEAR, connection, cursor)
 
 cursor.close()
 connection.close()
