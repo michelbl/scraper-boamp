@@ -32,19 +32,19 @@ def to_database():
     )
     cursor = connection.cursor()
 
-    stock_to_database(cursor)
-    stream_to_database(cursor)
+    stock_to_database(connection, cursor)
+    stream_to_database(connection, cursor)
 
     cursor.close()
     connection.close()
 
 
-def stock_to_database(cursor):
+def stock_to_database(connection, cursor):
     for year in STOCK_YEAR_LIST:
         stock_check_year(year)
 
         for doc_type in DOC_TYPE_LIST:
-            stock_doc_type_to_database(year=year, doc_type=doc_type, cursor=cursor)
+            stock_doc_type_to_database(year=year, doc_type=doc_type, connection=connection, cursor=cursor)
 
 
 def stock_check_year(year):
@@ -106,7 +106,7 @@ def stock_check_doc_type(year, doc_type):
     ])
 
 
-def stock_doc_type_to_database(year, doc_type, cursor):
+def stock_doc_type_to_database(year, doc_type, connection, cursor):
     os.mkdir(TMP_DIR)
 
     url_part_year = str(year) + '/'
@@ -135,17 +135,17 @@ def stock_doc_type_to_database(year, doc_type, cursor):
 
     xml_filename_list = os.listdir(xml_dir)
     for xml_filename in xml_filename_list:
-        avis_to_database(year, doc_type, xml_dir, xml_filename, cursor)
+        avis_to_database(year, doc_type, xml_dir, xml_filename, connection, cursor)
 
     shutil.rmtree(TMP_DIR)
 
 
-def stream_to_database(cursor):
+def stream_to_database(connection, cursor):
     for year in STREAM_YEAR_LIST:
-        stream_year_to_database(cursor)
+        stream_year_to_database(year, connection, cursor)
 
 
-def stream_year_to_database(year, cursor):
+def stream_year_to_database(year, connection, cursor):
     url_part_year = str(year) + '/'
     url_year = URL_BASE + URL_PART_STREAM + url_part_year
     response_year = requests.get(url_year)
@@ -166,10 +166,10 @@ def stream_year_to_database(year, cursor):
     ]
 
     for href in href_list_ok:
-        stream_file_to_database(year, href, cursor)
+        stream_file_to_database(year, href, connection, cursor)
 
 
-def stream_file_to_database(year, href, cursor):
+def stream_file_to_database(year, href, connection, cursor):
     os.mkdir(TMP_DIR)
 
     year1, doc_type, year2, ident = re.match(r'^/OPENDATA/BOAMP/(\d{4})/([A-Z\-]+)_(\d{4})_(\d+)\.taz$', href).groups()
@@ -219,12 +219,12 @@ def stream_file_to_database(year, href, cursor):
         ident = re.match(r'^(\d{2}-\d+)\.html$', filename_html).groups()[0]
         assert filename_xml == ident + '.xml'
 
-        avis_to_database(year, doc_type, uncompressed_dir_path, filename_xml, cursor)
+        avis_to_database(year, doc_type, uncompressed_dir_path, filename_xml, connection, cursor)
 
     shutil.rmtree(TMP_DIR)
 
 
-def avis_to_database(year, doc_type, xml_dir, xml_filename, cursor):
+def avis_to_database(year, doc_type, xml_dir, xml_filename, connection, cursor):
 
     ident = re.match(r'^(\d{2}-\d+)\.xml$', xml_filename).groups()[0]
 
