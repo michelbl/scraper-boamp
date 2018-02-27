@@ -59,9 +59,9 @@ def stock_check_year_dir(year):
     url_year = URL_BASE + URL_PART_STOCK + url_part_year
     response_year = requests.get(url_year)
     assert response_year.status_code == 200, response_year.status_code
-    
+
     soup = BeautifulSoup(response_year.text, 'html.parser')
-    
+
     links = soup.find_all('a')
     href_list = [
         link.attrs['href']
@@ -170,14 +170,28 @@ def stream_year_to_database(year, connection, cursor):
 
 
 def stream_file_to_database(year, href, connection, cursor):
+    def check_stream_file_already_done(url, connection, cursor):
+        cursor.execute("SELECT url FROM boamp_source_archives WHERE url = %s;", (url, ))
+        results = cursor.fetchall()
+        if len(results):
+            return True
+
+        cursor.execute("INSERT INTO boamp_source_archives (url) VALUES (%s)", (url, ))
+        connection.commit()
+
+        return False
+
+    url_archive = URL_BASE + href
+
+    if check_stream_file_already_done(url_archive, connection, cursor):
+        return
+
     os.mkdir(TMP_DIR)
 
     year1, doc_type, year2, ident = re.match(r'^/OPENDATA/BOAMP/(\d{4})/([A-Z\-]+)_(\d{4})_(\d+)\.taz$', href).groups()
     assert year1 == str(year)
     assert year2 == str(year)
     assert doc_type in DOC_TYPE_LIST
-
-    url_archive = URL_BASE + href
 
     response_archive = requests.get(url_archive, stream=True)
     assert response_archive.status_code == 200

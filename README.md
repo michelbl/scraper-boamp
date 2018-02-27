@@ -29,6 +29,8 @@ pip install --editable .
 ```
 CREATE TABLE boamp (year int, doc_type text, ident text, xml_content text);
 CREATE INDEX ON boamp (ident);
+CREATE TABLE boamp_source_archives (url text);
+CREATE INDEX ON boamp_source_archives (url);
 ```
 
 
