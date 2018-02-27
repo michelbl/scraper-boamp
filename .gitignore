@@ -1,0 +1,7 @@
+config.ini
+
+data
+
+.ipynb_checkpoints
+__pycache__
+scraper_boamp.egg-info
