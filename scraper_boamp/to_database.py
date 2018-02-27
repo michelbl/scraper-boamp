@@ -8,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import psycopg2
 
-from scraper_boamp.config import CONFIG_DATABASE
+from scraper_boamp.config import CONFIG_DATABASE, CONFIG_FILE_STORAGE
 
 
 DOC_TYPE_LIST = ['BOAMP-J-AO', 'BOAMP-J-IC-AA', 'BOAMP-N-AO', 'BOAMP-N-IC-AA', 'MAPA-AO', 'MAPA-IC-AA']
@@ -17,7 +17,7 @@ URL_BASE = 'https://echanges.dila.gouv.fr'
 URL_PART_STOCK = '/OPENDATA/BOAMP/FluxHistorique/Boamp_v230/'
 URL_PART_STREAM = '/OPENDATA/BOAMP/'
 
-TMP_DIR = '/home/michel/projects/scraper-place/data/tmp'
+TMP_DIR = CONFIG_FILE_STORAGE['tmp_directory']
 
 STOCK_YEAR_LIST = [2015, 2016]
 STREAM_YEAR_LIST = [2017, 2018]
