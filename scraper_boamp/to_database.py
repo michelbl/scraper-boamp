@@ -82,8 +82,8 @@ def stock_check_year_dir(year):
 
 def stock_check_doc_type(year, doc_type):
     url_part_year = str(year) + '/'
-    urp_part_doc_type = doc_type + '/'
-    url_doc_type = URL_BASE + URL_PART_STOCK + url_part_year + urp_part_doc_type
+    url_part_doc_type = doc_type + '/'
+    url_doc_type = URL_BASE + URL_PART_STOCK + url_part_year + url_part_doc_type
     response_doc_type = requests.get(url_doc_type)
     assert response_doc_type.status_code == 200, response_doc_type.status_code
 
@@ -101,7 +101,7 @@ def stock_check_doc_type(year, doc_type):
         if href[0] == '/'
     ]
     assert set(href_list_ok) == set([
-        URL_PART_STOCK + url_part_year + urp_part_doc_type + archive_name
+        URL_PART_STOCK + url_part_year + url_part_doc_type + archive_name
         for archive_name in { 'htm.zip', 'xml.zip' }
     ])
 
@@ -112,7 +112,7 @@ def stock_doc_type_to_database(year, doc_type, cursor):
     url_part_year = str(year) + '/'
     url_part_doc_type = doc_type + '/'
     archive_name = 'xml.zip'
-    url_archive = URL_BASE + URL_PART_STOCK + url_part_year + urp_part_doc_type + archive_name
+    url_archive = URL_BASE + URL_PART_STOCK + url_part_year + url_part_doc_type + archive_name
 
     response_archive = requests.get(url_archive, stream=True)
     assert response_archive.status_code == 200
