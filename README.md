@@ -37,9 +37,21 @@ CREATE INDEX ON boamp_source_archives (url);
 ## Usage
 
 ```
-from scraper_boamp import to_database
+python scripts/download_all.py
+```
 
-to_database.to_database()
+It takes about 1 hour to process years 2015, 2016, 2017 (about 500,000 avis).
+
+Then periodically:
+
+```
+python scripts/download_stream.py
+```
+
+For example, in `/etc/crontab`:
+
+```
+52 5 * * * michel /home/michel/.local/share/virtualenvs/place/bin/python /home/michel/place/scraper-boamp/scripts/download_stream.py
 ```
 
 
