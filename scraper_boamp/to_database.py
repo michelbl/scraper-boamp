@@ -10,86 +10,38 @@ from bs4 import BeautifulSoup
 from scraper_boamp.config import CONFIG_FILE_STORAGE
 
 
-DOC_TYPE_LIST = ['BOAMP-J-AO', 'BOAMP-J-IC-AA', 'BOAMP-N-AO', 'BOAMP-N-IC-AA', 'MAPA-AO', 'MAPA-IC-AA']
+# J = ?
+# N = ?
+# AO = Appel d'Offre
+# IC-AA = Intention de Conclure - Avis d'Attribution
+DOC_TYPE_LIST = [
+    'BOAMP-J-AO',
+    'BOAMP-J-IC-AA',
+    'BOAMP-N-AO',
+    'BOAMP-N-IC-AA',
+    'MAPA-AO',
+    'MAPA-IC-AA',
+]
 
 URL_BASE = 'https://echanges.dila.gouv.fr'
 URL_PART_STOCK = '/OPENDATA/BOAMP/FluxHistorique/Boamp_v230/'
-URL_PART_STREAM = '/OPENDATA/BOAMP/'
+URL_PART_STREAM = '/OPENDATA/BOAMP/FluxHistorique/Boamp_v230/'
+URL_PART_STREAM_CURRENT = '/OPENDATA/BOAMP/'
 
 TMP_DIR = CONFIG_FILE_STORAGE['tmp_directory']
 
-STOCK_YEAR_LIST = [2015, 2016]
+STOCK_YEAR_LIST = [] #[2015, 2016]
 STREAM_YEAR_LIST = [2017, 2018]
+STREAM_YEAR_CURRENT = [2019]
 
 
-def stock_to_database(connection, cursor):
-    for year in STOCK_YEAR_LIST:
-        stock_check_year(year)
-
-        for doc_type in DOC_TYPE_LIST:
-            stock_doc_type_to_database(year=year, doc_type=doc_type, connection=connection, cursor=cursor)
-
-
-def stock_check_year(year):
-    stock_check_year_dir(year)
-
+def stock_year_to_database(connection, cursor):
     for doc_type in DOC_TYPE_LIST:
-        stock_check_doc_type(year=year, doc_type=doc_type)
+        print(doc_type)
+        stock_doctype_to_database(year=year, doc_type=doc_type, connection=connection, cursor=cursor)
 
 
-def stock_check_year_dir(year):
-    url_part_year = str(year) + '/'
-    url_year = URL_BASE + URL_PART_STOCK + url_part_year
-    response_year = requests.get(url_year)
-    assert response_year.status_code == 200, response_year.status_code
-
-    soup = BeautifulSoup(response_year.text, 'html.parser')
-
-    links = soup.find_all('a')
-    href_list = [
-        link.attrs['href']
-        for link in links
-        if 'href' in link.attrs
-    ]
-    href_list_ok = [
-        href
-        for href in href_list
-        if href[0] == '/'
-    ]
-
-    assert set(href_list_ok) == set([
-        URL_PART_STOCK + url_part_year + doc_type + '/'
-        for doc_type in DOC_TYPE_LIST
-    ])
-
-
-def stock_check_doc_type(year, doc_type):
-    url_part_year = str(year) + '/'
-    url_part_doc_type = doc_type + '/'
-    url_doc_type = URL_BASE + URL_PART_STOCK + url_part_year + url_part_doc_type
-    response_doc_type = requests.get(url_doc_type)
-    assert response_doc_type.status_code == 200, response_doc_type.status_code
-
-    soup = BeautifulSoup(response_doc_type.text, 'html.parser')
-
-    links = soup.find_all('a')
-    href_list = [
-        link.attrs['href']
-        for link in links
-        if 'href' in link.attrs
-    ]
-    href_list_ok = [
-        href
-        for href in href_list
-        if href[0] == '/'
-    ]
-    assert set(href_list_ok) == set([
-        URL_PART_STOCK + url_part_year + url_part_doc_type + archive_name
-        for archive_name in { 'htm.zip', 'xml.zip' }
-    ])
-
-
-def stock_doc_type_to_database(year, doc_type, connection, cursor):
+def stock_year_doctype_to_database(year, doc_type, connection, cursor):
     os.mkdir(TMP_DIR)
 
     url_part_year = str(year) + '/'
@@ -123,16 +75,20 @@ def stock_doc_type_to_database(year, doc_type, connection, cursor):
     shutil.rmtree(TMP_DIR)
 
 
-def stream_to_database(connection, cursor):
-    for year in STREAM_YEAR_LIST:
-        stream_year_to_database(year, connection, cursor)
+def stream_year_to_database(year, url_part, connection, cursor):
+    for doc_type in DOC_TYPE_LIST:
+        stream_year_doctype_to_database(year, doc_type, url_part, connection, cursor)
 
 
-def stream_year_to_database(year, connection, cursor):
-    url_part_year = str(year) + '/'
-    url_year = URL_BASE + URL_PART_STREAM + url_part_year
-    response_year = requests.get(url_year)
-    assert response_year.status_code == 200, response_year.status_code
+def stream_year_doctype_to_database(year, doc_type, url_part, connection, cursor):
+    if doc_type:
+        url = URL_BASE + url_part + str(year) + '/' + doc_type + '/'
+    else:
+        url = URL_BASE + url_part + str(year) + '/'
+
+    print(url)
+    response_year = requests.get(url)
+    assert response_year.status_code == 200, (response_year.status_code, url)
 
     soup = BeautifulSoup(response_year.text, 'html.parser')
 
@@ -145,14 +101,16 @@ def stream_year_to_database(year, connection, cursor):
     href_list_ok = [
         href
         for href in href_list
-        if href[0] == '/' and href != '/OPENDATA/BOAMP/2018/BOAMP-N-IC-AA_2018_043008/' # yes!
+        if href[0] == 'B' #and href != '/OPENDATA/BOAMP/2018/BOAMP-N-IC-AA_2018_043008/'
     ]
 
     for href in href_list_ok:
-        stream_file_to_database(year, href, connection, cursor)
+        os.mkdir(TMP_DIR)
+        stream_file_to_database(year, doc_type, href, url_part, connection, cursor)
+        shutil.rmtree(TMP_DIR)
 
 
-def stream_file_to_database(year, href, connection, cursor):
+def stream_file_to_database(year, doc_type, filename, url_part, connection, cursor):    
     def check_stream_file_already_done(url, connection, cursor):
         cursor.execute("SELECT url FROM boamp_source_archives WHERE url = %s;", (url, ))
         results = cursor.fetchall()
@@ -164,23 +122,23 @@ def stream_file_to_database(year, href, connection, cursor):
 
         return False
 
-    url_archive = URL_BASE + href
+    if doc_type:
+        url_archive = URL_BASE + url_part + str(year) + '/' + doc_type + '/' + filename
+    else:
+        url_archive = URL_BASE + url_part + str(year) + '/' + filename
 
     if check_stream_file_already_done(url_archive, connection, cursor):
         return
 
-    os.mkdir(TMP_DIR)
 
-    year1, doc_type, year2, ident = re.match(r'^/OPENDATA/BOAMP/(\d{4})/([A-Z\-]+)_(\d{4})_(\d+)\.taz$', href).groups()
-    assert year1 == str(year)
-    assert year2 == str(year)
-    assert doc_type in DOC_TYPE_LIST
+    doc_type, year_bis, ident = re.match(r'^([A-Z\-]+)_(\d{4})_(\d+)\.taz$', filename).groups()
+    assert year_bis == str(year)
 
     response_archive = requests.get(url_archive, stream=True)
-    assert response_archive.status_code == 200
+    assert response_archive.status_code == 200, (response_archive.status_code, url_archive)
 
-    content_type = response_archive.headers['Content-Type']
-    assert content_type in {'application/octet-stream'}, response_archive.headers
+    #content_type = response_archive.headers['Content-Type']
+    #assert content_type in {'application/octet-stream'}, response_archive.headers
 
     archive_file_path = os.path.join(TMP_DIR, 'file.taz')
     with open(archive_file_path, 'wb') as file_object:
@@ -217,8 +175,6 @@ def stream_file_to_database(year, href, connection, cursor):
         assert filename_xml == ident + '.xml'
 
         avis_to_database(year, doc_type, uncompressed_dir_path, filename_xml, connection, cursor)
-
-    shutil.rmtree(TMP_DIR)
 
 
 def avis_to_database(year, doc_type, xml_dir, xml_filename, connection, cursor):

@@ -27,6 +27,13 @@ pip install --editable .
 * Create a new database user with all privileges on a new table, with access by password (`md5` in `pg_hda.conf`).
 
 ```
+sudo -u postgres createuser --login --pwprompt boamp
+sudo -u postgres createdb --owner=boamp boamp
+```
+
+then:
+
+```
 CREATE TABLE boamp (year int, doc_type text, ident text, xml_content text);
 CREATE INDEX ON boamp (ident);
 CREATE TABLE boamp_source_archives (url text);
